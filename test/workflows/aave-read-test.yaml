@@ -1,0 +1,42 @@
+name: "Aave V3: Read Test v2"
+on: workflow_dispatch
+
+jobs:
+  read-aave:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Get the list of reserve tokens from Aave Pool on Sepolia
+      - id: reserves
+        ethereum:
+          network: ethereum-sepolia
+          read:
+            read-contract:
+              contract: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951"
+              method: "getReservesList() view returns (address[])"
+
+      # 2. Log the reserves list
+      - run: echo "Reserves=${{ steps.reserves.outputs.result }}"
+
+      # 3. Get USDC oracle price
+      - id: usdc-price
+        ethereum:
+          network: ethereum-sepolia
+          read:
+            read-contract:
+              contract: "0x2da88497588bf89281816106C7259e31AF45a663"
+              method: "getAssetPrice(address) view returns (uint256)"
+              args: '["0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"]'
+
+      - run: echo "USDC price=${{ steps.usdc-price.outputs.result }}"
+
+      # 4. Get USDC reserve config
+      - id: usdc-config
+        ethereum:
+          network: ethereum-sepolia
+          read:
+            read-contract:
+              contract: "0x3e9708d80f7B3e43118013075F7e95CE3AB31F31"
+              method: "getReserveConfigurationData(address) view returns (uint256, uint256, uint256, uint256, uint256, bool, bool, bool, bool, bool)"
+              args: '["0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"]'
+
+      - run: echo "USDC config=${{ steps.usdc-config.outputs.result }}"
