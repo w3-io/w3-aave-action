@@ -1,0 +1,176 @@
+kind: integration
+partner: aave
+name: Aave V3 Lending
+version: 0.1.0
+repo: w3-io/w3-aave-action
+
+description: >
+  Aave V3 lending protocol across 13 networks. Supply, borrow, repay,
+  liquidate, flash loans, and read operations. All on-chain operations
+  go through the W3 bridge — no private keys in the action container.
+
+context: >
+  Use Aave when a workflow needs DeFi lending: earning yield on idle
+  assets (supply), leveraging positions (borrow against collateral),
+  managing debt (repay), or executing arbitrage (flash loans). Works
+  on Ethereum, Polygon, Arbitrum, Optimism, Base, Avalanche, and 7
+  other networks.
+
+commands:
+  # ── Core lending ──────────────────────────────────────────────
+  - name: supply
+    description: Supply an asset as collateral. Auto-approves the Pool.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      amount: { type: string, required: true, description: Amount in base units }
+      on-behalf-of: { type: string, required: false, description: Recipient (defaults to signer from approve receipt) }
+      referral-code: { type: string, required: false, description: "Aave referral code (default: 0)" }
+    outputs:
+      result: { type: object, description: "Transaction receipt with from, txHash, status" }
+
+  - name: withdraw
+    description: Withdraw an asset (redeem aTokens for underlying).
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      amount: { type: string, required: true, description: Amount in base units (max uint256 for all) }
+      to: { type: string, required: true, description: Recipient wallet address }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  - name: borrow
+    description: Borrow an asset against supplied collateral.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      amount: { type: string, required: true, description: Amount in base units }
+      on-behalf-of: { type: string, required: true, description: Borrower wallet address }
+      rate-mode: { type: string, required: false, description: "stable or variable (default: variable)" }
+      referral-code: { type: string, required: false, description: "Aave referral code (default: 0)" }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  - name: repay
+    description: Repay borrowed debt. Auto-approves the Pool.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      amount: { type: string, required: true, description: Amount in base units (max uint256 for all) }
+      rate-mode: { type: string, required: false, description: "stable or variable (default: variable)" }
+      on-behalf-of: { type: string, required: false, description: Debtor (defaults to signer from approve receipt) }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  - name: repay-with-atokens
+    description: Repay debt using aTokens (no approval needed).
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      amount: { type: string, required: true, description: Amount in base units }
+      rate-mode: { type: string, required: false, description: "stable or variable (default: variable)" }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  # ── Position management ───────────────────────────────────────
+  - name: set-collateral
+    description: Toggle whether an asset is used as collateral.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      value: { type: string, required: true, description: "true or false" }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  - name: set-emode
+    description: Set efficiency mode category.
+    inputs:
+      category-id: { type: string, required: true, description: "E-mode category ID (0 = disabled)" }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  - name: swap-borrow-rate
+    description: Switch between stable and variable borrow rate.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      rate-mode: { type: string, required: true, description: Target rate mode }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  # ── Liquidation ───────────────────────────────────────────────
+  - name: liquidate
+    description: Liquidate an undercollateralized position.
+    inputs:
+      collateral-asset: { type: string, required: true, description: Collateral token address }
+      debt-asset: { type: string, required: true, description: Debt token address }
+      user: { type: string, required: true, description: Address to liquidate }
+      amount: { type: string, required: true, description: Debt amount to cover }
+      receive-atoken: { type: string, required: false, description: "Receive aTokens instead of underlying (default: false)" }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  # ── Flash loans ───────────────────────────────────────────────
+  - name: flash-loan
+    description: Execute a single-asset flash loan via flashLoanSimple.
+    inputs:
+      receiver: { type: string, required: true, description: Flash loan receiver contract }
+      asset: { type: string, required: true, description: ERC-20 token address }
+      amount: { type: string, required: true, description: Amount in base units }
+      params: { type: string, required: false, description: "Encoded bytes for receiver (default: 0x)" }
+      referral-code: { type: string, required: false, description: "Aave referral code (default: 0)" }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
+  # ── Read operations ───────────────────────────────────────────
+  - name: get-position
+    description: Get aggregated account data (collateral, debt, health factor).
+    inputs:
+      user: { type: string, required: true, description: Wallet address }
+    outputs:
+      result: { type: object, description: "{totalCollateralBase, totalDebtBase, availableBorrowsBase, ltv, healthFactor}" }
+
+  - name: get-reserve-data
+    description: Get reserve data for an asset.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+    outputs:
+      result: { type: object, description: Reserve data (liquidity, rates, config) }
+
+  - name: get-user-reserve
+    description: Get user-specific reserve data.
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      user: { type: string, required: true, description: Wallet address }
+    outputs:
+      result: { type: object, description: User reserve data (aToken balance, debt) }
+
+  - name: get-reserves-list
+    description: List all reserve addresses in the Pool.
+    inputs: {}
+    outputs:
+      result: { type: array, description: Array of reserve token addresses }
+
+  - name: get-asset-price
+    description: Get asset price from Aave Oracle (8 decimal USD).
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+    outputs:
+      result: { type: string, description: Price in 8-decimal USD }
+
+  - name: get-reserve-config
+    description: Get reserve configuration (LTV, thresholds, flags).
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+    outputs:
+      result: { type: object, description: "{decimals, ltv, liquidationThreshold, borrowingEnabled, ...}" }
+
+  - name: get-emode-data
+    description: Get e-mode category configuration.
+    inputs:
+      category-id: { type: string, required: true, description: E-mode category ID }
+    outputs:
+      result: { type: object, description: E-mode category data }
+
+  # ── Testnet ───────────────────────────────────────────────────
+  - name: faucet-mint
+    description: Mint test tokens from Aave faucet (Sepolia only).
+    inputs:
+      asset: { type: string, required: true, description: ERC-20 token address }
+      to: { type: string, required: true, description: Recipient address }
+      amount: { type: string, required: true, description: Amount in base units }
+    outputs:
+      result: { type: object, description: Transaction receipt }
