@@ -1,0 +1,87 @@
+name: 'W3 Aave V3 Action'
+description: 'Aave V3 lending — supply, borrow, repay, liquidate, flash loans for W3 workflows'
+author: 'w3-io'
+
+inputs:
+  command:
+    description: >
+      Operation to perform. 18 commands across 6 categories:
+      Lending: supply, withdraw, borrow, repay, repay-with-atokens.
+      Position: set-collateral, set-emode, swap-borrow-rate.
+      Liquidation: liquidate.
+      Flash Loans: flash-loan.
+      Read: get-position, get-reserve-data, get-user-reserve,
+        get-reserves-list, get-asset-price, get-reserve-config,
+        get-emode-data.
+      Testnet: faucet-mint.
+    required: true
+  network:
+    description: >
+      Blockchain network (ethereum, polygon, arbitrum, optimism,
+      base, avalanche, bnb, gnosis, scroll, metis, zksync,
+      polygon-zkevm, ethereum-sepolia)
+    required: true
+
+  # ── Shared inputs ────────────────────────────────────────────
+  asset:
+    description: 'ERC-20 token address'
+    required: false
+  amount:
+    description: 'Amount in token base units (e.g., 1000000 for 1 USDC)'
+    required: false
+  user:
+    description: 'User/wallet address for queries or liquidation target'
+    required: false
+  to:
+    description: 'Recipient address for withdraw'
+    required: false
+  on-behalf-of:
+    description: 'Address to supply/borrow/repay on behalf of'
+    required: false
+
+  # ── Lending inputs ───────────────────────────────────────────
+  rate-mode:
+    description: 'Interest rate mode: "stable" or "variable" (default: variable)'
+    required: false
+    default: 'variable'
+  referral-code:
+    description: 'Aave referral code (default: 0)'
+    required: false
+    default: '0'
+
+  # ── Position inputs ──────────────────────────────────────────
+  value:
+    description: 'Boolean value for set-collateral (true/false)'
+    required: false
+  category-id:
+    description: 'E-mode category ID (0 = disabled)'
+    required: false
+
+  # ── Liquidation inputs ───────────────────────────────────────
+  collateral-asset:
+    description: 'Collateral token address for liquidation'
+    required: false
+  debt-asset:
+    description: 'Debt token address for liquidation'
+    required: false
+  receive-atoken:
+    description: 'Receive aTokens instead of underlying on liquidation (true/false)'
+    required: false
+    default: 'false'
+
+  # ── Flash loan inputs ────────────────────────────────────────
+  receiver:
+    description: 'Flash loan receiver contract address'
+    required: false
+  params:
+    description: 'Encoded bytes data passed to flash loan receiver'
+    required: false
+    default: '0x'
+
+outputs:
+  result:
+    description: 'JSON result of the operation'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
