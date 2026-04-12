@@ -28171,14 +28171,18 @@ class AaveClient {
   /**
    * Supply (deposit) an asset as collateral.
    * Automatically approves the Pool to spend the token.
+   *
+   * When `onBehalfOf` is omitted, the signer's address is read from
+   * the approve receipt (`from` field) — no key derivation needed.
    */
   async supply({ asset, amount, onBehalfOf, referralCode = '0' } = {}) {
     if (!asset) throw new AaveError('MISSING_INPUT', 'asset address is required')
     if (!amount) throw new AaveError('MISSING_INPUT', 'amount is required')
 
-    await this.#approve(asset, this.pool, amount)
+    const approveResult = await this.#approve(asset, this.pool, amount)
+    const sender = onBehalfOf || approveResult.from
 
-    const args = [asset, amount, onBehalfOf || '0x0', referralCode]
+    const args = [asset, amount, sender, referralCode]
     return this.#call(
       this.pool,
       'function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)',
@@ -28186,12 +28190,18 @@ class AaveClient {
     )
   }
 
-  /** Withdraw an asset (redeem aTokens for underlying). */
+  /**
+   * Withdraw an asset (redeem aTokens for underlying).
+   *
+   * The `to` address is required — Aave does not default to
+   * msg.sender when `address(0)` is passed.
+   */
   async withdraw({ asset, amount, to } = {}) {
     if (!asset) throw new AaveError('MISSING_INPUT', 'asset address is required')
     if (!amount) throw new AaveError('MISSING_INPUT', 'amount is required')
+    if (!to) throw new AaveError('MISSING_INPUT', 'to address is required (signer wallet address)')
 
-    const args = [asset, amount, to || '0x0']
+    const args = [asset, amount, to]
     return this.#call(
       this.pool,
       'function withdraw(address asset, uint256 amount, address to) returns (uint256)',
@@ -28199,13 +28209,20 @@ class AaveClient {
     )
   }
 
-  /** Borrow an asset against supplied collateral. */
+  /**
+   * Borrow an asset against supplied collateral.
+   *
+   * The `onBehalfOf` address is required — Aave does not default
+   * to msg.sender when `address(0)` is passed.
+   */
   async borrow({ asset, amount, rateMode, onBehalfOf, referralCode = '0' } = {}) {
     if (!asset) throw new AaveError('MISSING_INPUT', 'asset address is required')
     if (!amount) throw new AaveError('MISSING_INPUT', 'amount is required')
+    if (!onBehalfOf)
+      throw new AaveError('MISSING_INPUT', 'onBehalfOf address is required (signer wallet address)')
 
     const mode = parseRateMode(rateMode)
-    const args = [asset, amount, mode.toString(), referralCode, onBehalfOf || '0x0']
+    const args = [asset, amount, mode.toString(), referralCode, onBehalfOf]
     return this.#call(
       this.pool,
       'function borrow(address asset, uint256 amount, uint256 interestRateMode, uint16 referralCode, address onBehalfOf)',
@@ -28216,15 +28233,19 @@ class AaveClient {
   /**
    * Repay borrowed debt.
    * Automatically approves the Pool to spend the token.
+   *
+   * When `onBehalfOf` is omitted, the signer's address is read from
+   * the approve receipt (`from` field) — no key derivation needed.
    */
   async repay({ asset, amount, rateMode, onBehalfOf } = {}) {
     if (!asset) throw new AaveError('MISSING_INPUT', 'asset address is required')
     if (!amount) throw new AaveError('MISSING_INPUT', 'amount is required')
 
-    await this.#approve(asset, this.pool, amount)
+    const approveResult = await this.#approve(asset, this.pool, amount)
+    const sender = onBehalfOf || approveResult.from
 
     const mode = parseRateMode(rateMode)
-    const args = [asset, amount, mode.toString(), onBehalfOf || '0x0']
+    const args = [asset, amount, mode.toString(), sender]
     return this.#call(
       this.pool,
       'function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf) returns (uint256)',
@@ -28502,7 +28523,7 @@ const handlers = {
     const r = await getClient().withdraw({
       asset: core.getInput('asset', { required: true }),
       amount: core.getInput('amount', { required: true }),
-      to: opt('to'),
+      to: core.getInput('to', { required: true }),
     })
     ;(0,dist.setJsonOutput)('result', r)
   },
@@ -28512,7 +28533,7 @@ const handlers = {
       asset: core.getInput('asset', { required: true }),
       amount: core.getInput('amount', { required: true }),
       rateMode: opt('rate-mode'),
-      onBehalfOf: opt('on-behalf-of'),
+      onBehalfOf: core.getInput('on-behalf-of', { required: true }),
       referralCode: opt('referral-code'),
     })
     ;(0,dist.setJsonOutput)('result', r)

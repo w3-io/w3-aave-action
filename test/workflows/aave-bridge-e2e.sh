@@ -16,7 +16,8 @@ set -o pipefail
 #   W3_CLI=/path/to/w3 SEPOLIA_RPC=https://... ./test/workflows/aave-bridge-e2e.sh
 
 W3_CLI="${W3_CLI:-../../protocol/target/debug/w3}"
-BRIDGE_PORT="${BRIDGE_PORT:-9100}"
+# Default: W3_HTTP_PORT - 1 (matches bridge serve's own default)
+BRIDGE_PORT="${BRIDGE_PORT:-$(( ${W3_HTTP_PORT:-8233} - 1 ))}"
 SEPOLIA_RPC="${SEPOLIA_RPC:-https://eth-sepolia.g.alchemy.com/v2/0L3k1EjL5mpti6pqRUi1y}"
 
 echo "=== Aave V3 Bridge E2E Test ==="

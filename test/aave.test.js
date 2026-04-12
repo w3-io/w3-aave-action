@@ -75,8 +75,10 @@ describe('AaveClient: construction', () => {
 // ── Core lending ──────────────────────────────────────────────
 
 describe('supply', () => {
-  it('approves and calls Pool.supply', async () => {
-    await client().supply({ asset: USDC, amount: '1000000' })
+  it('approves and calls Pool.supply with from derived from approve', async () => {
+    const c = client()
+    mockResults.push({ from: USER }) // approve receipt
+    await c.supply({ asset: USDC, amount: '1000000' })
     assert.equal(calls.length, 2)
     // First call: approve
     assert.equal(calls[0].action, 'approve-token')
@@ -84,12 +86,21 @@ describe('supply', () => {
     assert.equal(calls[0].params.spender, POOL)
     assert.equal(calls[0].params.amount, '1000000')
     assert.equal(calls[0].network, NETWORK)
-    // Second call: supply
+    // Second call: supply — onBehalfOf derived from approve receipt
     assert.equal(calls[1].action, 'call-contract')
     assert.equal(calls[1].params.contract, POOL)
     assert.ok(calls[1].params.method.includes('supply'))
     assert.equal(calls[1].params.args[0], USDC)
     assert.equal(calls[1].params.args[1], '1000000')
+    assert.equal(calls[1].params.args[2], USER) // from approve receipt
+  })
+
+  it('uses explicit onBehalfOf when provided', async () => {
+    const other = '0x0000000000000000000000000000000000000099'
+    const c = client()
+    mockResults.push({ from: USER }) // approve receipt
+    await c.supply({ asset: USDC, amount: '1000000', onBehalfOf: other })
+    assert.equal(calls[1].params.args[2], other) // explicit takes precedence
   })
 
   it('throws MISSING_INPUT without asset', async () => {
@@ -121,7 +132,14 @@ describe('withdraw', () => {
 
   it('throws MISSING_INPUT without asset', async () => {
     await assert.rejects(
-      () => client().withdraw({ amount: '100' }),
+      () => client().withdraw({ amount: '100', to: USER }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without to', async () => {
+    await assert.rejects(
+      () => client().withdraw({ asset: USDC, amount: '100' }),
       (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
     )
   })
@@ -129,34 +147,53 @@ describe('withdraw', () => {
 
 describe('borrow', () => {
   it('calls Pool.borrow with variable rate by default', async () => {
-    await client().borrow({ asset: DAI, amount: '500000000000000000' })
+    await client().borrow({ asset: DAI, amount: '500000000000000000', onBehalfOf: USER })
     assert.equal(calls.length, 1)
     assert.equal(calls[0].action, 'call-contract')
     assert.ok(calls[0].params.method.includes('borrow'))
     assert.equal(calls[0].params.args[0], DAI)
     assert.equal(calls[0].params.args[2], '2') // variable
+    assert.equal(calls[0].params.args[4], USER)
   })
 
   it('accepts stable rate mode', async () => {
-    await client().borrow({ asset: DAI, amount: '100', rateMode: 'stable' })
+    await client().borrow({ asset: DAI, amount: '100', rateMode: 'stable', onBehalfOf: USER })
     assert.equal(calls[0].params.args[2], '1') // stable
   })
 
   it('throws on invalid rate mode', async () => {
     await assert.rejects(
-      () => client().borrow({ asset: DAI, amount: '100', rateMode: 'invalid' }),
+      () => client().borrow({ asset: DAI, amount: '100', rateMode: 'invalid', onBehalfOf: USER }),
       (err) => err instanceof AaveError && err.code === 'INVALID_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without onBehalfOf', async () => {
+    await assert.rejects(
+      () => client().borrow({ asset: DAI, amount: '100' }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
     )
   })
 })
 
 describe('repay', () => {
-  it('approves and calls Pool.repay', async () => {
-    await client().repay({ asset: DAI, amount: '500' })
+  it('approves and calls Pool.repay with from derived from approve', async () => {
+    const c = client()
+    mockResults.push({ from: USER }) // approve receipt
+    await c.repay({ asset: DAI, amount: '500' })
     assert.equal(calls.length, 2)
     assert.equal(calls[0].action, 'approve-token')
     assert.equal(calls[1].action, 'call-contract')
     assert.ok(calls[1].params.method.includes('repay('))
+    assert.equal(calls[1].params.args[3], USER) // from approve receipt
+  })
+
+  it('uses explicit onBehalfOf when provided', async () => {
+    const other = '0x0000000000000000000000000000000000000099'
+    const c = client()
+    mockResults.push({ from: USER }) // approve receipt
+    await c.repay({ asset: DAI, amount: '500', onBehalfOf: other })
+    assert.equal(calls[1].params.args[3], other) // explicit takes precedence
   })
 })
 

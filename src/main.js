@@ -66,7 +66,7 @@ const handlers = {
     const r = await getClient().withdraw({
       asset: core.getInput('asset', { required: true }),
       amount: core.getInput('amount', { required: true }),
-      to: opt('to'),
+      to: core.getInput('to', { required: true }),
     })
     setJsonOutput('result', r)
   },
@@ -76,7 +76,7 @@ const handlers = {
       asset: core.getInput('asset', { required: true }),
       amount: core.getInput('amount', { required: true }),
       rateMode: opt('rate-mode'),
-      onBehalfOf: opt('on-behalf-of'),
+      onBehalfOf: core.getInput('on-behalf-of', { required: true }),
       referralCode: opt('referral-code'),
     })
     setJsonOutput('result', r)
