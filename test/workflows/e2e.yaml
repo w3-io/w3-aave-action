@@ -216,21 +216,20 @@ jobs:
   emode:
     runs-on: ubuntu-latest
     steps:
-      # Set e-mode category
-      - uses: w3-io/w3-aave-action@main
-        id: set-emode
-        env:
-          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow: ["*"]
-        with:
-          command: set-emode
-          network: base
-          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
-          category-id: '0'
+      # SKIP: set-emode fails if wallet has active borrows in incompatible categories
+      # - uses: w3-io/w3-aave-action@main
+      #   id: set-emode
+      #   env:
+      #     W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+      #   bridge-allow: ["*"]
+      #   with:
+      #     command: set-emode
+      #     network: base
+      #     rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+      #     category-id: '0'
 
       - run: |
-          echo "=== Set E-Mode ==="
-          echo "${{ steps.set-emode.outputs.result }}"
+          echo "=== E-Mode skipped (requires no active borrows) ==="
 
   # ── Write: repay-with-atokens (if position exists) ─────────────
   # NOTE: Requires an active borrow position
