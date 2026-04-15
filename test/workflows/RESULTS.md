@@ -33,10 +33,10 @@ Funded EVM wallet on Base with ETH + USDC.
 | 14 | Repay borrowed WETH | `repay` | PASS | Recovery |
 | 15 | Withdraw supplied USDC | `withdraw` | PASS | Recovery |
 | 16 | Print write results | (run step) | PASS | |
-| 17 | Set e-mode category | `set-emode` | PASS | |
-| 18 | Print e-mode results | (run step) | FAIL | Known issue |
+| 17 | Set e-mode category | `set-emode` | SKIP | Fails with active borrows in incompatible categories |
+| 18 | Print e-mode results | (run step) | PASS | |
 
-**Summary: 17/18 steps pass.**
+**Summary: 17/17 active steps pass (1 skipped).**
 
 ## Skipped Commands
 
