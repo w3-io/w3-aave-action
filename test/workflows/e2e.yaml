@@ -30,6 +30,7 @@ jobs:
         with:
           command: get-reserves-list
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
 
       # get-reserve-data (USDC)
       - uses: w3-io/w3-aave-action@main
@@ -37,6 +38,7 @@ jobs:
         with:
           command: get-reserve-data
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
       # get-reserve-config (USDC)
@@ -45,6 +47,7 @@ jobs:
         with:
           command: get-reserve-config
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
       # get-asset-price (USDC)
@@ -53,6 +56,7 @@ jobs:
         with:
           command: get-asset-price
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
       # get-asset-price (WETH)
@@ -61,6 +65,7 @@ jobs:
         with:
           command: get-asset-price
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x4200000000000000000000000000000000000006'
 
       # get-position
@@ -69,6 +74,7 @@ jobs:
         with:
           command: get-position
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
 
       # get-user-reserve (USDC)
@@ -77,6 +83,7 @@ jobs:
         with:
           command: get-user-reserve
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
@@ -86,6 +93,7 @@ jobs:
         with:
           command: get-emode-data
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           category-id: '1'
 
       - run: |
@@ -115,11 +123,11 @@ jobs:
         id: supply
         env:
           W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow:
-          - ethereum/call-contract
+        bridge-allow: ["*"]
         with:
           command: supply
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
           amount: '10000'
           on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
@@ -129,11 +137,11 @@ jobs:
         id: set-collateral
         env:
           W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow:
-          - ethereum/call-contract
+        bridge-allow: ["*"]
         with:
           command: set-collateral
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
           value: 'true'
 
@@ -143,6 +151,7 @@ jobs:
         with:
           command: get-position
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
 
       # 4. Borrow a tiny amount of WETH against USDC collateral
@@ -150,11 +159,11 @@ jobs:
         id: borrow
         env:
           W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow:
-          - ethereum/call-contract
+        bridge-allow: ["*"]
         with:
           command: borrow
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x4200000000000000000000000000000000000006'
           amount: '1000000000000'
           rate-mode: variable
@@ -165,11 +174,11 @@ jobs:
         id: repay
         env:
           W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow:
-          - ethereum/call-contract
+        bridge-allow: ["*"]
         with:
           command: repay
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x4200000000000000000000000000000000000006'
           amount: '1000000000000'
           rate-mode: variable
@@ -180,11 +189,11 @@ jobs:
         id: withdraw
         env:
           W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow:
-          - ethereum/call-contract
+        bridge-allow: ["*"]
         with:
           command: withdraw
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
           amount: '10000'
           to: '0xe4E402962943c4EB2253f666575eE12700e78e90'
@@ -212,11 +221,11 @@ jobs:
         id: set-emode
         env:
           W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-        bridge-allow:
-          - ethereum/call-contract
+        bridge-allow: ["*"]
         with:
           command: set-emode
           network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           category-id: '0'
 
       - run: |
@@ -232,11 +241,11 @@ jobs:
   #       id: repay-atokens
   #       env:
   #         W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-  #       bridge-allow:
-  #         - ethereum/call-contract
+  #       bridge-allow: ["*"]
   #       with:
   #         command: repay-with-atokens
   #         network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
   #         asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   #         amount: '10000'
   #         rate-mode: variable
@@ -250,11 +259,11 @@ jobs:
   #       id: flash
   #       env:
   #         W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-  #       bridge-allow:
-  #         - ethereum/call-contract
+  #       bridge-allow: ["*"]
   #       with:
   #         command: flash-loan
   #         network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
   #         receiver: '<flash-loan-receiver-contract>'
   #         asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   #         amount: '1000000'
@@ -269,11 +278,11 @@ jobs:
   #       id: liquidate
   #       env:
   #         W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-  #       bridge-allow:
-  #         - ethereum/call-contract
+  #       bridge-allow: ["*"]
   #       with:
   #         command: liquidate
   #         network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
   #         collateral-asset: '0x4200000000000000000000000000000000000006'
   #         debt-asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   #         user: '<underwater-borrower>'
