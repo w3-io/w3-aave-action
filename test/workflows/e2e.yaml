@@ -1,0 +1,277 @@
+# E2E Test Workflow
+#
+# Exercises every command against real APIs/contracts.
+# Run on a local W3 network with:
+#   w3 workflow deploy test/workflows/e2e.yaml
+#   w3 workflow "Aave V3 E2E" trigger
+#
+# Prerequisites:
+#   - W3 local network running (make dev)
+#   - W3_SECRET_ETHEREUM (bridge signer with ETH + USDC on Base)
+#
+# Addresses (Base mainnet):
+#   USDC:  0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+#   WETH:  0x4200000000000000000000000000000000000006
+#   aUSDC: 0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB
+
+name: Aave V3 E2E
+on:
+  workflow_dispatch: {}
+
+jobs:
+  # ── Read-only commands ──────────────────────────────────────────
+  reads:
+    runs-on: ubuntu-latest
+    steps:
+      # get-reserves-list
+      - uses: w3-io/w3-aave-action@main
+        id: reserves-list
+        with:
+          command: get-reserves-list
+          network: base
+
+      # get-reserve-data (USDC)
+      - uses: w3-io/w3-aave-action@main
+        id: reserve-data
+        with:
+          command: get-reserve-data
+          network: base
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+
+      # get-reserve-config (USDC)
+      - uses: w3-io/w3-aave-action@main
+        id: reserve-config
+        with:
+          command: get-reserve-config
+          network: base
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+
+      # get-asset-price (USDC)
+      - uses: w3-io/w3-aave-action@main
+        id: asset-price-usdc
+        with:
+          command: get-asset-price
+          network: base
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+
+      # get-asset-price (WETH)
+      - uses: w3-io/w3-aave-action@main
+        id: asset-price-weth
+        with:
+          command: get-asset-price
+          network: base
+          asset: '0x4200000000000000000000000000000000000006'
+
+      # get-position
+      - uses: w3-io/w3-aave-action@main
+        id: position
+        with:
+          command: get-position
+          network: base
+          user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+
+      # get-user-reserve (USDC)
+      - uses: w3-io/w3-aave-action@main
+        id: user-reserve
+        with:
+          command: get-user-reserve
+          network: base
+          user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+
+      # get-emode-data
+      - uses: w3-io/w3-aave-action@main
+        id: emode
+        with:
+          command: get-emode-data
+          network: base
+          category-id: '1'
+
+      - run: |
+          echo "=== Reserves List ==="
+          echo "${{ steps.reserves-list.outputs.result }}"
+          echo "=== Reserve Data (USDC) ==="
+          echo "${{ steps.reserve-data.outputs.result }}"
+          echo "=== Reserve Config (USDC) ==="
+          echo "${{ steps.reserve-config.outputs.result }}"
+          echo "=== Asset Price (USDC) ==="
+          echo "${{ steps.asset-price-usdc.outputs.result }}"
+          echo "=== Asset Price (WETH) ==="
+          echo "${{ steps.asset-price-weth.outputs.result }}"
+          echo "=== Position ==="
+          echo "${{ steps.position.outputs.result }}"
+          echo "=== User Reserve (USDC) ==="
+          echo "${{ steps.user-reserve.outputs.result }}"
+          echo "=== E-Mode Data ==="
+          echo "${{ steps.emode.outputs.result }}"
+
+  # ── Write: supply -> borrow -> repay -> withdraw ────────────────
+  lending-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Supply USDC
+      - uses: w3-io/w3-aave-action@main
+        id: supply
+        env:
+          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+        bridge-allow:
+          - ethereum/call-contract
+        with:
+          command: supply
+          network: base
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+          amount: '10000'
+          on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+
+      # 2. Set USDC as collateral
+      - uses: w3-io/w3-aave-action@main
+        id: set-collateral
+        env:
+          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+        bridge-allow:
+          - ethereum/call-contract
+        with:
+          command: set-collateral
+          network: base
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+          value: 'true'
+
+      # 3. Check position after supply
+      - uses: w3-io/w3-aave-action@main
+        id: position-after
+        with:
+          command: get-position
+          network: base
+          user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+
+      # 4. Borrow a tiny amount of WETH
+      # NOTE: requires sufficient collateral value
+      # - uses: w3-io/w3-aave-action@main
+      #   id: borrow
+      #   env:
+      #     W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+      #   bridge-allow:
+      #     - ethereum/call-contract
+      #   with:
+      #     command: borrow
+      #     network: base
+      #     asset: '0x4200000000000000000000000000000000000006'
+      #     amount: '1000000000000'
+      #     rate-mode: variable
+      #     on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+
+      # 5. Repay borrowed WETH
+      # - uses: w3-io/w3-aave-action@main
+      #   id: repay
+      #   env:
+      #     W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+      #   bridge-allow:
+      #     - ethereum/call-contract
+      #   with:
+      #     command: repay
+      #     network: base
+      #     asset: '0x4200000000000000000000000000000000000006'
+      #     amount: '1000000000000'
+      #     rate-mode: variable
+      #     on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+
+      # 6. Withdraw supplied USDC
+      - uses: w3-io/w3-aave-action@main
+        id: withdraw
+        env:
+          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+        bridge-allow:
+          - ethereum/call-contract
+        with:
+          command: withdraw
+          network: base
+          asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+          amount: '10000'
+          to: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+
+      - run: |
+          echo "=== Supply ==="
+          echo "${{ steps.supply.outputs.result }}"
+          echo "=== Set Collateral ==="
+          echo "${{ steps.set-collateral.outputs.result }}"
+          echo "=== Position After Supply ==="
+          echo "${{ steps.position-after.outputs.result }}"
+          echo "=== Withdraw ==="
+          echo "${{ steps.withdraw.outputs.result }}"
+
+  # ── Write: e-mode ───────────────────────────────────────────────
+  emode:
+    runs-on: ubuntu-latest
+    steps:
+      # Set e-mode category
+      - uses: w3-io/w3-aave-action@main
+        id: set-emode
+        env:
+          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+        bridge-allow:
+          - ethereum/call-contract
+        with:
+          command: set-emode
+          network: base
+          category-id: '0'
+
+      - run: |
+          echo "=== Set E-Mode ==="
+          echo "${{ steps.set-emode.outputs.result }}"
+
+  # ── Write: repay-with-atokens (if position exists) ─────────────
+  # NOTE: Requires an active borrow position
+  # repay-with-atokens:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: w3-io/w3-aave-action@main
+  #       id: repay-atokens
+  #       env:
+  #         W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+  #       bridge-allow:
+  #         - ethereum/call-contract
+  #       with:
+  #         command: repay-with-atokens
+  #         network: base
+  #         asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  #         amount: '10000'
+  #         rate-mode: variable
+
+  # ── Write: flash-loan (requires receiver contract) ──────────────
+  # NOTE: flash-loan requires a deployed receiver contract
+  # flash-loan:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: w3-io/w3-aave-action@main
+  #       id: flash
+  #       env:
+  #         W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+  #       bridge-allow:
+  #         - ethereum/call-contract
+  #       with:
+  #         command: flash-loan
+  #         network: base
+  #         receiver: '<flash-loan-receiver-contract>'
+  #         asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  #         amount: '1000000'
+  #         params: '0x'
+
+  # ── Write: liquidate (requires underwater position) ─────────────
+  # NOTE: liquidate requires finding an underwater borrower
+  # liquidation:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: w3-io/w3-aave-action@main
+  #       id: liquidate
+  #       env:
+  #         W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+  #       bridge-allow:
+  #         - ethereum/call-contract
+  #       with:
+  #         command: liquidate
+  #         network: base
+  #         collateral-asset: '0x4200000000000000000000000000000000000006'
+  #         debt-asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  #         user: '<underwater-borrower>'
+  #         amount: '1000'
+  #         receive-atoken: 'false'
