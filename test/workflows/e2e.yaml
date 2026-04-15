@@ -1,4 +1,5 @@
 # E2E Test Workflow
+# Recovery: all write tests round-trip to recover funds. Only gas is consumed.
 #
 # Exercises every command against real APIs/contracts.
 # Run on a local W3 network with:
@@ -144,38 +145,37 @@ jobs:
           network: base
           user: '0xe4E402962943c4EB2253f666575eE12700e78e90'
 
-      # 4. Borrow a tiny amount of WETH
-      # NOTE: requires sufficient collateral value
-      # - uses: w3-io/w3-aave-action@main
-      #   id: borrow
-      #   env:
-      #     W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-      #   bridge-allow:
-      #     - ethereum/call-contract
-      #   with:
-      #     command: borrow
-      #     network: base
-      #     asset: '0x4200000000000000000000000000000000000006'
-      #     amount: '1000000000000'
-      #     rate-mode: variable
-      #     on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+      # 4. Borrow a tiny amount of WETH against USDC collateral
+      - uses: w3-io/w3-aave-action@main
+        id: borrow
+        env:
+          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+        bridge-allow:
+          - ethereum/call-contract
+        with:
+          command: borrow
+          network: base
+          asset: '0x4200000000000000000000000000000000000006'
+          amount: '1000000000000'
+          rate-mode: variable
+          on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
 
-      # 5. Repay borrowed WETH
-      # - uses: w3-io/w3-aave-action@main
-      #   id: repay
-      #   env:
-      #     W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
-      #   bridge-allow:
-      #     - ethereum/call-contract
-      #   with:
-      #     command: repay
-      #     network: base
-      #     asset: '0x4200000000000000000000000000000000000006'
-      #     amount: '1000000000000'
-      #     rate-mode: variable
-      #     on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
+      # 5. Recovery: repay borrowed WETH
+      - uses: w3-io/w3-aave-action@main
+        id: repay
+        env:
+          W3_SECRET_ETHEREUM: ${{ secrets.W3_SECRET_ETHEREUM }}
+        bridge-allow:
+          - ethereum/call-contract
+        with:
+          command: repay
+          network: base
+          asset: '0x4200000000000000000000000000000000000006'
+          amount: '1000000000000'
+          rate-mode: variable
+          on-behalf-of: '0xe4E402962943c4EB2253f666575eE12700e78e90'
 
-      # 6. Withdraw supplied USDC
+      # 6. Recovery: withdraw supplied USDC (matches supply amount)
       - uses: w3-io/w3-aave-action@main
         id: withdraw
         env:
@@ -196,6 +196,10 @@ jobs:
           echo "${{ steps.set-collateral.outputs.result }}"
           echo "=== Position After Supply ==="
           echo "${{ steps.position-after.outputs.result }}"
+          echo "=== Borrow ==="
+          echo "${{ steps.borrow.outputs.result }}"
+          echo "=== Repay ==="
+          echo "${{ steps.repay.outputs.result }}"
           echo "=== Withdraw ==="
           echo "${{ steps.withdraw.outputs.result }}"
 
