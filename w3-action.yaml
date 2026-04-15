@@ -23,16 +23,23 @@ commands:
     inputs:
       asset: { type: string, required: true, description: ERC-20 token address }
       amount: { type: string, required: true, description: Amount in base units }
-      on-behalf-of: { type: string, required: false, description: Recipient (defaults to signer from approve receipt) }
-      referral-code: { type: string, required: false, description: "Aave referral code (default: 0)" }
+      on-behalf-of:
+        {
+          type: string,
+          required: false,
+          description: Recipient (defaults to signer from approve receipt),
+        }
+      referral-code:
+        { type: string, required: false, description: 'Aave referral code (default: 0)' }
     outputs:
-      result: { type: object, description: "Transaction receipt with from, txHash, status" }
+      result: { type: object, description: 'Transaction receipt with from, txHash, status' }
 
   - name: withdraw
     description: Withdraw an asset (redeem aTokens for underlying).
     inputs:
       asset: { type: string, required: true, description: ERC-20 token address }
-      amount: { type: string, required: true, description: Amount in base units (max uint256 for all) }
+      amount:
+        { type: string, required: true, description: Amount in base units (max uint256 for all) }
       to: { type: string, required: true, description: Recipient wallet address }
     outputs:
       result: { type: object, description: Transaction receipt }
@@ -43,8 +50,10 @@ commands:
       asset: { type: string, required: true, description: ERC-20 token address }
       amount: { type: string, required: true, description: Amount in base units }
       on-behalf-of: { type: string, required: true, description: Borrower wallet address }
-      rate-mode: { type: string, required: false, description: "stable or variable (default: variable)" }
-      referral-code: { type: string, required: false, description: "Aave referral code (default: 0)" }
+      rate-mode:
+        { type: string, required: false, description: 'stable or variable (default: variable)' }
+      referral-code:
+        { type: string, required: false, description: 'Aave referral code (default: 0)' }
     outputs:
       result: { type: object, description: Transaction receipt }
 
@@ -52,9 +61,16 @@ commands:
     description: Repay borrowed debt. Auto-approves the Pool.
     inputs:
       asset: { type: string, required: true, description: ERC-20 token address }
-      amount: { type: string, required: true, description: Amount in base units (max uint256 for all) }
-      rate-mode: { type: string, required: false, description: "stable or variable (default: variable)" }
-      on-behalf-of: { type: string, required: false, description: Debtor (defaults to signer from approve receipt) }
+      amount:
+        { type: string, required: true, description: Amount in base units (max uint256 for all) }
+      rate-mode:
+        { type: string, required: false, description: 'stable or variable (default: variable)' }
+      on-behalf-of:
+        {
+          type: string,
+          required: false,
+          description: Debtor (defaults to signer from approve receipt),
+        }
     outputs:
       result: { type: object, description: Transaction receipt }
 
@@ -63,7 +79,8 @@ commands:
     inputs:
       asset: { type: string, required: true, description: ERC-20 token address }
       amount: { type: string, required: true, description: Amount in base units }
-      rate-mode: { type: string, required: false, description: "stable or variable (default: variable)" }
+      rate-mode:
+        { type: string, required: false, description: 'stable or variable (default: variable)' }
     outputs:
       result: { type: object, description: Transaction receipt }
 
@@ -72,14 +89,15 @@ commands:
     description: Toggle whether an asset is used as collateral.
     inputs:
       asset: { type: string, required: true, description: ERC-20 token address }
-      value: { type: string, required: true, description: "true or false" }
+      value: { type: string, required: true, description: 'true or false' }
     outputs:
       result: { type: object, description: Transaction receipt }
 
   - name: set-emode
     description: Set efficiency mode category.
     inputs:
-      category-id: { type: string, required: true, description: "E-mode category ID (0 = disabled)" }
+      category-id:
+        { type: string, required: true, description: 'E-mode category ID (0 = disabled)' }
     outputs:
       result: { type: object, description: Transaction receipt }
 
@@ -99,7 +117,12 @@ commands:
       debt-asset: { type: string, required: true, description: Debt token address }
       user: { type: string, required: true, description: Address to liquidate }
       amount: { type: string, required: true, description: Debt amount to cover }
-      receive-atoken: { type: string, required: false, description: "Receive aTokens instead of underlying (default: false)" }
+      receive-atoken:
+        {
+          type: string,
+          required: false,
+          description: 'Receive aTokens instead of underlying (default: false)',
+        }
     outputs:
       result: { type: object, description: Transaction receipt }
 
@@ -110,8 +133,10 @@ commands:
       receiver: { type: string, required: true, description: Flash loan receiver contract }
       asset: { type: string, required: true, description: ERC-20 token address }
       amount: { type: string, required: true, description: Amount in base units }
-      params: { type: string, required: false, description: "Encoded bytes for receiver (default: 0x)" }
-      referral-code: { type: string, required: false, description: "Aave referral code (default: 0)" }
+      params:
+        { type: string, required: false, description: 'Encoded bytes for receiver (default: 0x)' }
+      referral-code:
+        { type: string, required: false, description: 'Aave referral code (default: 0)' }
     outputs:
       result: { type: object, description: Transaction receipt }
 
@@ -121,7 +146,11 @@ commands:
     inputs:
       user: { type: string, required: true, description: Wallet address }
     outputs:
-      result: { type: object, description: "{totalCollateralBase, totalDebtBase, availableBorrowsBase, ltv, healthFactor}" }
+      result:
+        {
+          type: object,
+          description: '{totalCollateralBase, totalDebtBase, availableBorrowsBase, ltv, healthFactor}',
+        }
 
   - name: get-reserve-data
     description: Get reserve data for an asset.
@@ -156,7 +185,11 @@ commands:
     inputs:
       asset: { type: string, required: true, description: ERC-20 token address }
     outputs:
-      result: { type: object, description: "{decimals, ltv, liquidationThreshold, borrowingEnabled, ...}" }
+      result:
+        {
+          type: object,
+          description: '{decimals, ltv, liquidationThreshold, borrowingEnabled, ...}',
+        }
 
   - name: get-emode-data
     description: Get e-mode category configuration.
