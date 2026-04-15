@@ -245,7 +245,6 @@ jobs:
   #       with:
   #         command: repay-with-atokens
   #         network: base
-          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
   #         asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   #         amount: '10000'
   #         rate-mode: variable
@@ -263,7 +262,6 @@ jobs:
   #       with:
   #         command: flash-loan
   #         network: base
-          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
   #         receiver: '<flash-loan-receiver-contract>'
   #         asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   #         amount: '1000000'
@@ -282,7 +280,6 @@ jobs:
   #       with:
   #         command: liquidate
   #         network: base
-          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
   #         collateral-asset: '0x4200000000000000000000000000000000000006'
   #         debt-asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   #         user: '<underwater-borrower>'
