@@ -1,0 +1,269 @@
+name: Test Aave Action
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [audie/*]
+
+# Base USDC address for Aave V3
+env:
+  USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  WETH: "0x4200000000000000000000000000000000000006"
+  ZERO_ADDR: "0x0000000000000000000000000000000000000000"
+
+jobs:
+  read-operations:
+    name: Read operations (no signer needed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: get-reserves-list
+        uses: ./
+        id: reserves_list
+        with:
+          command: get-reserves-list
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+
+      - name: Verify get-reserves-list
+        run: echo '${{ steps.reserves_list.outputs.result }}' | jq -e 'length > 0'
+
+      - name: get-reserve-data
+        uses: ./
+        id: reserve_data
+        with:
+          command: get-reserve-data
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+
+      - name: Verify get-reserve-data
+        run: echo '${{ steps.reserve_data.outputs.result }}' | jq .
+
+      - name: get-reserve-config
+        uses: ./
+        id: reserve_config
+        with:
+          command: get-reserve-config
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+
+      - name: Verify get-reserve-config
+        run: echo '${{ steps.reserve_config.outputs.result }}' | jq .
+
+      - name: get-asset-price
+        uses: ./
+        id: asset_price
+        with:
+          command: get-asset-price
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+
+      - name: Verify get-asset-price
+        run: echo '${{ steps.asset_price.outputs.result }}' | jq .
+
+      - name: get-position
+        uses: ./
+        id: position
+        with:
+          command: get-position
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          user: ${{ env.ZERO_ADDR }}
+
+      - name: Verify get-position
+        run: echo '${{ steps.position.outputs.result }}' | jq .
+
+      - name: get-user-reserve
+        uses: ./
+        id: user_reserve
+        with:
+          command: get-user-reserve
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          user: ${{ env.ZERO_ADDR }}
+
+      - name: Verify get-user-reserve
+        run: echo '${{ steps.user_reserve.outputs.result }}' | jq .
+
+      - name: get-emode-data
+        uses: ./
+        id: emode_data
+        with:
+          command: get-emode-data
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          category-id: "0"
+
+      - name: Verify get-emode-data
+        run: echo '${{ steps.emode_data.outputs.result }}' | jq .
+
+  lending-lifecycle:
+    name: Lending lifecycle (needs W3 signer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # SKIP: faucet-mint is Sepolia-only (not available on Base)
+      # - name: faucet-mint
+      #   uses: ./
+      #   with:
+      #     command: faucet-mint
+      #     network: ethereum-sepolia
+      #     asset: "0x..."
+      #     to: ${{ secrets.W3_SIGNER_ADDRESS }}
+      #     amount: "1000000000"
+
+      # ── Supply and position management ──────────────────────────────
+
+      - name: supply USDC
+        uses: ./
+        id: supply
+        with:
+          command: supply
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          amount: "1000000"
+          on-behalf-of: ${{ secrets.W3_SIGNER_ADDRESS }}
+
+      - name: Verify supply
+        run: echo '${{ steps.supply.outputs.result }}' | jq .
+
+      - name: set-collateral (enable USDC)
+        uses: ./
+        id: set_collateral
+        with:
+          command: set-collateral
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          value: "true"
+
+      - name: Verify set-collateral
+        run: echo '${{ steps.set_collateral.outputs.result }}' | jq .
+
+      - name: set-emode (disable)
+        uses: ./
+        id: set_emode
+        with:
+          command: set-emode
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          category-id: "0"
+
+      - name: Verify set-emode
+        run: echo '${{ steps.set_emode.outputs.result }}' | jq .
+
+      # ── Borrow and repay ────────────────────────────────────────────
+
+      - name: borrow USDC
+        uses: ./
+        id: borrow
+        with:
+          command: borrow
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          amount: "100000"
+          rate-mode: variable
+          on-behalf-of: ${{ secrets.W3_SIGNER_ADDRESS }}
+
+      - name: Verify borrow
+        run: echo '${{ steps.borrow.outputs.result }}' | jq .
+
+      # SKIP: swap-borrow-rate requires stable rate to be enabled for the
+      # asset, which is deprecated on Aave V3 Base (all borrows are variable)
+      # - name: swap-borrow-rate
+      #   uses: ./
+      #   id: swap_borrow_rate
+      #   with:
+      #     command: swap-borrow-rate
+      #     network: base
+      #     rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+      #     asset: ${{ env.USDC }}
+      #     rate-mode: variable
+
+      - name: repay USDC
+        uses: ./
+        id: repay
+        with:
+          command: repay
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          amount: "50000"
+          rate-mode: variable
+          on-behalf-of: ${{ secrets.W3_SIGNER_ADDRESS }}
+
+      - name: Verify repay
+        run: echo '${{ steps.repay.outputs.result }}' | jq .
+
+      - name: repay-with-atokens
+        uses: ./
+        id: repay_with_atokens
+        with:
+          command: repay-with-atokens
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          amount: "50000"
+          rate-mode: variable
+
+      - name: Verify repay-with-atokens
+        run: echo '${{ steps.repay_with_atokens.outputs.result }}' | jq .
+
+      # ── Withdraw ────────────────────────────────────────────────────
+
+      - name: withdraw USDC
+        uses: ./
+        id: withdraw
+        with:
+          command: withdraw
+          network: base
+          rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+          asset: ${{ env.USDC }}
+          amount: "500000"
+          to: ${{ secrets.W3_SIGNER_ADDRESS }}
+
+      - name: Verify withdraw
+        run: echo '${{ steps.withdraw.outputs.result }}' | jq .
+
+      # SKIP: liquidate requires an underwater position (health factor < 1)
+      # - name: liquidate
+      #   uses: ./
+      #   with:
+      #     command: liquidate
+      #     network: base
+      #     rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+      #     collateral-asset: ${{ env.WETH }}
+      #     debt-asset: ${{ env.USDC }}
+      #     user: "0x..."
+      #     amount: "100000"
+
+      # SKIP: flash-loan requires a receiver contract deployed on-chain
+      # - name: flash-loan
+      #   uses: ./
+      #   with:
+      #     command: flash-loan
+      #     network: base
+      #     rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
+      #     receiver: "0x..."
+      #     asset: ${{ env.USDC }}
+      #     amount: "1000000"
+
+      - name: Summary
+        run: |
+          echo "### Aave Action Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Read (7):** get-reserves-list, get-reserve-data, get-reserve-config, get-asset-price, get-position, get-user-reserve, get-emode-data" >> $GITHUB_STEP_SUMMARY
+          echo "**Write (7):** supply, set-collateral, set-emode, borrow, repay, repay-with-atokens, withdraw" >> $GITHUB_STEP_SUMMARY
+          echo "**Skipped (4):**" >> $GITHUB_STEP_SUMMARY
+          echo "- faucet-mint: Sepolia-only (not Base)" >> $GITHUB_STEP_SUMMARY
+          echo "- swap-borrow-rate: stable rate deprecated on Aave V3 Base" >> $GITHUB_STEP_SUMMARY
+          echo "- liquidate: requires underwater position" >> $GITHUB_STEP_SUMMARY
+          echo "- flash-loan: requires deployed receiver contract" >> $GITHUB_STEP_SUMMARY
