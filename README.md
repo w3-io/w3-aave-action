@@ -49,6 +49,26 @@ See [docs/guide.md](docs/guide.md) for per-command reference.
 
 Ethereum, Polygon, Arbitrum, Optimism, Base, Avalanche, BNB, Gnosis, Scroll, Metis, zkSync, Polygon zkEVM, Ethereum Sepolia (testnet).
 
+## Authentication
+
+This action is **self-custody** — there are no API keys. Read
+operations need no credentials; write operations are signed by the
+W3 bridge using its configured signer.
+
+| Operation | Needs                                                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Reads     | Nothing. `get-reserves-list`, `get-position`, etc. just work.                                                                        |
+| Writes    | A funded signer key configured on the bridge (typically via `W3_BRIDGE_SIGNER_ETHEREUM`). The key never enters the action container. |
+
+The bridge exposes the signer's address as the `from` field on the
+write operation's result, so workflows can chain `${{
+steps.supply.outputs.result.from }}` as the `on-behalf-of` input for
+the next step without ever seeing the private key.
+
+For local development, start a standalone bridge with `w3 bridge serve
+--signer-ethereum $W3_SECRET_ETHEREUM --allow '*' --port 8232` and
+point actions at it via `W3_BRIDGE_URL=http://host.docker.internal:8232`.
+
 ## Bridge integration
 
 All on-chain operations go through the W3 bridge.

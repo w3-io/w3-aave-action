@@ -7,9 +7,9 @@ on:
 
 # Base USDC address for Aave V3
 env:
-  USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-  WETH: "0x4200000000000000000000000000000000000006"
-  ZERO_ADDR: "0x0000000000000000000000000000000000000000"
+  USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  WETH: '0x4200000000000000000000000000000000000006'
+  ZERO_ADDR: '0x0000000000000000000000000000000000000000'
 
 jobs:
   read-operations:
@@ -97,7 +97,7 @@ jobs:
           command: get-emode-data
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
-          category-id: "0"
+          category-id: '0'
 
       - name: Verify get-emode-data
         run: echo '${{ steps.emode_data.outputs.result }}' | jq .
@@ -128,7 +128,7 @@ jobs:
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: ${{ env.USDC }}
-          amount: "1000000"
+          amount: '1000000'
           on-behalf-of: ${{ secrets.W3_SIGNER_ADDRESS }}
 
       - name: Verify supply
@@ -142,7 +142,7 @@ jobs:
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: ${{ env.USDC }}
-          value: "true"
+          value: 'true'
 
       - name: Verify set-collateral
         run: echo '${{ steps.set_collateral.outputs.result }}' | jq .
@@ -154,7 +154,7 @@ jobs:
           command: set-emode
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
-          category-id: "0"
+          category-id: '0'
 
       - name: Verify set-emode
         run: echo '${{ steps.set_emode.outputs.result }}' | jq .
@@ -169,7 +169,7 @@ jobs:
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: ${{ env.USDC }}
-          amount: "100000"
+          amount: '100000'
           rate-mode: variable
           on-behalf-of: ${{ secrets.W3_SIGNER_ADDRESS }}
 
@@ -196,7 +196,7 @@ jobs:
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: ${{ env.USDC }}
-          amount: "50000"
+          amount: '50000'
           rate-mode: variable
           on-behalf-of: ${{ secrets.W3_SIGNER_ADDRESS }}
 
@@ -211,7 +211,7 @@ jobs:
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: ${{ env.USDC }}
-          amount: "50000"
+          amount: '50000'
           rate-mode: variable
 
       - name: Verify repay-with-atokens
@@ -227,7 +227,7 @@ jobs:
           network: base
           rpc-url: ${{ secrets.ALCHEMY_BASE_RPC }}
           asset: ${{ env.USDC }}
-          amount: "500000"
+          amount: '500000'
           to: ${{ secrets.W3_SIGNER_ADDRESS }}
 
       - name: Verify withdraw
