@@ -13,7 +13,7 @@ Other inputs depend on the command.
 | `amount`           | string  | supply, withdraw, borrow, repay, repay-with-atokens, flash-loan, faucet-mint                                                                                                            | Amount in token base units                     |
 | `to`               | address | withdraw, faucet-mint                                                                                                                                                                   | Recipient address                              |
 | `on-behalf-of`     | address | borrow                                                                                                                                                                                  | Address to borrow on behalf of                 |
-| `user`             | address | get-position, get-user-reserve, liquidate                                                                                                                                               | User/wallet address                            |
+| `user`             | address | get-position, get-user-reserve, liquidate, get-voting-power, get-rewards-balance                                                                                                        | User/wallet address                            |
 | `rate-mode`        | string  | borrow, repay, swap-borrow-rate                                                                                                                                                         | `"stable"` or `"variable"` (default: variable) |
 | `referral-code`    | string  | supply, borrow, flash-loan                                                                                                                                                              | Aave referral code (default: 0)                |
 | `value`            | string  | set-collateral                                                                                                                                                                          | `"true"` or `"false"`                          |
@@ -23,6 +23,10 @@ Other inputs depend on the command.
 | `receive-atoken`   | string  | liquidate                                                                                                                                                                               | Receive aTokens instead of underlying          |
 | `receiver`         | address | flash-loan                                                                                                                                                                              | Flash loan receiver contract                   |
 | `params`           | bytes   | flash-loan                                                                                                                                                                              | Encoded data for flash loan receiver           |
+| `proposal-id`      | string  | get-proposal                                                                                                                                                                            | Governance proposal ID                         |
+| `block-number`     | string  | get-voting-power                                                                                                                                                                        | Block number for voting power query            |
+| `assets`           | string  | get-rewards-balance, claim-rewards                                                                                                                                                      | Comma-separated aToken/debt token addresses    |
+| `reward`           | address | get-rewards-balance, claim-rewards                                                                                                                                                      | Reward token address                           |
 
 ## Output
 
@@ -190,6 +194,67 @@ Get reserve configuration: LTV, liquidation threshold, borrowing enabled, etc.
 
 Get e-mode category configuration.
 
+### Governance
+
+#### `get-proposal`
+
+Get an Aave governance proposal by ID. Ethereum mainnet only.
+Returns proposal state, creator, voting config, and timestamps.
+
+```yaml
+- uses: w3-io/w3-aave-action@v1
+  with:
+    command: get-proposal
+    network: ethereum
+    proposal-id: '1'
+```
+
+#### `get-voting-power`
+
+Get a user's voting power at a given block number. Ethereum mainnet only.
+
+```yaml
+- uses: w3-io/w3-aave-action@v1
+  with:
+    command: get-voting-power
+    network: ethereum
+    user: '0xYourWallet...'
+    block-number: '18500000'
+```
+
+### Rewards
+
+#### `get-rewards-balance`
+
+Get unclaimed rewards for a user. Ethereum mainnet only.
+Pass aToken or debt token addresses as a comma-separated list.
+
+```yaml
+- uses: w3-io/w3-aave-action@v1
+  with:
+    command: get-rewards-balance
+    network: ethereum
+    assets: '0xBcca60bB61934080951369a648Fb03DF4F96263C'
+    user: '0xYourWallet...'
+    reward: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'
+```
+
+#### `claim-rewards`
+
+Claim accumulated rewards. Ethereum mainnet only.
+Write operation that transfers unclaimed rewards to the `to` address.
+
+```yaml
+- uses: w3-io/w3-aave-action@v1
+  with:
+    command: claim-rewards
+    network: ethereum
+    assets: '0xBcca60bB61934080951369a648Fb03DF4F96263C'
+    amount: '1000000000000000000'
+    to: '0xYourWallet...'
+    reward: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'
+```
+
 ### Testnet
 
 #### `faucet-mint`
@@ -236,3 +301,10 @@ Pool addresses per network are hardcoded from `@bgd-labs/aave-address-book`:
 | zksync           | `0x78e30497a3c7527d953C6B1C5c1c1F9c74D3bC74` |
 | polygon-zkevm    | `0xc4F7b5d4ca00eE04cF9887D5D811d3C3B35Cc764` |
 | ethereum-sepolia | `0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951` |
+
+Governance and rewards contracts (Ethereum mainnet only):
+
+| Contract             | Address                                      |
+| -------------------- | -------------------------------------------- |
+| Governance V3        | `0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7` |
+| IncentivesController | `0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb` |

@@ -1,11 +1,11 @@
 name: 'W3 Aave V3 Action'
-description: 'Aave V3 lending — supply, borrow, repay, liquidate, flash loans for W3 workflows'
+description: 'Aave V3 lending, governance, and rewards — supply, borrow, repay, liquidate, flash loans, governance reads, reward claiming for W3 workflows'
 author: 'w3-io'
 
 inputs:
   command:
     description: >
-      Operation to perform. 18 commands across 6 categories:
+      Operation to perform. 22 commands across 8 categories:
       Lending: supply, withdraw, borrow, repay, repay-with-atokens.
       Position: set-collateral, set-emode, swap-borrow-rate.
       Liquidation: liquidate.
@@ -13,6 +13,8 @@ inputs:
       Read: get-position, get-reserve-data, get-user-reserve,
         get-reserves-list, get-asset-price, get-reserve-config,
         get-emode-data.
+      Governance: get-proposal, get-voting-power.
+      Rewards: get-rewards-balance, claim-rewards.
       Testnet: faucet-mint.
     required: true
   network:
@@ -33,7 +35,7 @@ inputs:
     description: 'User/wallet address for queries or liquidation target'
     required: false
   to:
-    description: 'Recipient address for withdraw'
+    description: 'Recipient address for withdraw or claim-rewards'
     required: false
   on-behalf-of:
     description: 'Address to supply/borrow/repay on behalf of'
@@ -68,6 +70,22 @@ inputs:
     description: 'Receive aTokens instead of underlying on liquidation (true/false)'
     required: false
     default: 'false'
+
+  # ── Governance inputs ────────────────────────────────────────
+  proposal-id:
+    description: 'Governance proposal ID'
+    required: false
+  block-number:
+    description: 'Block number for voting power query'
+    required: false
+
+  # ── Rewards inputs ──────────────────────────────────────────
+  assets:
+    description: 'Comma-separated list of aToken/debt token addresses for rewards'
+    required: false
+  reward:
+    description: 'Reward token address'
+    required: false
 
   # ── Flash loan inputs ────────────────────────────────────────
   receiver:
