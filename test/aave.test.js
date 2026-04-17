@@ -360,6 +360,187 @@ describe('getEModeData', () => {
   })
 })
 
+// ── Governance reads ────────────────────────────────────────
+
+const GOVERNANCE = '0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7'
+const INCENTIVES = '0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb'
+
+describe('getProposal', () => {
+  it('reads Governance.getProposal on mainnet', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    mockResults.push({ id: '1', state: '3' })
+    const r = await c.getProposal({ proposalId: '1' })
+    assert.equal(calls[0].action, 'read-contract')
+    assert.equal(calls[0].params.contract, GOVERNANCE)
+    assert.ok(calls[0].params.method.includes('getProposal'))
+    assert.equal(calls[0].params.args[0], '1')
+    assert.deepEqual(r, { id: '1', state: '3' })
+  })
+
+  it('throws UNSUPPORTED_NETWORK on non-mainnet', async () => {
+    await assert.rejects(
+      () => client().getProposal({ proposalId: '1' }),
+      (err) => err instanceof AaveError && err.code === 'UNSUPPORTED_NETWORK',
+    )
+  })
+
+  it('throws MISSING_INPUT without proposalId', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.getProposal({}),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+})
+
+describe('getVotingPower', () => {
+  it('reads Governance.getPowerCurrent on mainnet', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    mockResults.push('1000000000000000000')
+    const r = await c.getVotingPower({ user: USER, blockNumber: '12345678' })
+    assert.equal(calls[0].action, 'read-contract')
+    assert.equal(calls[0].params.contract, GOVERNANCE)
+    assert.ok(calls[0].params.method.includes('getPowerCurrent'))
+    assert.deepEqual(calls[0].params.args, [USER, '12345678'])
+    assert.equal(r, '1000000000000000000')
+  })
+
+  it('throws UNSUPPORTED_NETWORK on non-mainnet', async () => {
+    await assert.rejects(
+      () => client().getVotingPower({ user: USER, blockNumber: '100' }),
+      (err) => err instanceof AaveError && err.code === 'UNSUPPORTED_NETWORK',
+    )
+  })
+
+  it('throws MISSING_INPUT without user', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.getVotingPower({ blockNumber: '100' }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without blockNumber', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.getVotingPower({ user: USER }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+})
+
+// ── Rewards ─────────────────────────────────────────────────
+
+describe('getRewardsBalance', () => {
+  it('reads IncentivesController.getUserRewards on mainnet', async () => {
+    const reward = '0x0000000000000000000000000000000000000077'
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    mockResults.push('5000000')
+    const r = await c.getRewardsBalance({ assets: [USDC], user: USER, reward })
+    assert.equal(calls[0].action, 'read-contract')
+    assert.equal(calls[0].params.contract, INCENTIVES)
+    assert.ok(calls[0].params.method.includes('getUserRewards'))
+    assert.deepEqual(calls[0].params.args, [[USDC], USER, reward])
+    assert.equal(r, '5000000')
+  })
+
+  it('parses comma-separated assets string', async () => {
+    const reward = '0x0000000000000000000000000000000000000077'
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await c.getRewardsBalance({ assets: `${USDC}, ${DAI}`, user: USER, reward })
+    assert.deepEqual(calls[0].params.args[0], [USDC, DAI])
+  })
+
+  it('throws UNSUPPORTED_NETWORK on non-mainnet', async () => {
+    await assert.rejects(
+      () => client().getRewardsBalance({ assets: [USDC], user: USER, reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'UNSUPPORTED_NETWORK',
+    )
+  })
+
+  it('throws MISSING_INPUT without assets', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.getRewardsBalance({ user: USER, reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without user', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.getRewardsBalance({ assets: [USDC], reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without reward', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.getRewardsBalance({ assets: [USDC], user: USER }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+})
+
+describe('claimRewards', () => {
+  it('calls IncentivesController.claimRewards on mainnet', async () => {
+    const reward = '0x0000000000000000000000000000000000000077'
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await c.claimRewards({ assets: [USDC], amount: '5000000', to: USER, reward })
+    assert.equal(calls[0].action, 'call-contract')
+    assert.equal(calls[0].params.contract, INCENTIVES)
+    assert.ok(calls[0].params.method.includes('claimRewards'))
+    assert.deepEqual(calls[0].params.args, [[USDC], '5000000', USER, reward])
+  })
+
+  it('parses comma-separated assets string', async () => {
+    const reward = '0x0000000000000000000000000000000000000077'
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await c.claimRewards({ assets: `${USDC}, ${DAI}`, amount: '100', to: USER, reward })
+    assert.deepEqual(calls[0].params.args[0], [USDC, DAI])
+  })
+
+  it('throws UNSUPPORTED_NETWORK on non-mainnet', async () => {
+    await assert.rejects(
+      () => client().claimRewards({ assets: [USDC], amount: '100', to: USER, reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'UNSUPPORTED_NETWORK',
+    )
+  })
+
+  it('throws MISSING_INPUT without assets', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.claimRewards({ amount: '100', to: USER, reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without amount', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.claimRewards({ assets: [USDC], to: USER, reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without to', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.claimRewards({ assets: [USDC], amount: '100', reward: USDC }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+
+  it('throws MISSING_INPUT without reward', async () => {
+    const c = new AaveClient({ network: 'ethereum', bridge: mockBridge() })
+    await assert.rejects(
+      () => c.claimRewards({ assets: [USDC], amount: '100', to: USER }),
+      (err) => err instanceof AaveError && err.code === 'MISSING_INPUT',
+    )
+  })
+})
+
 // ── Testnet helpers ──────────────────────────────────────────
 
 describe('faucetMint', () => {

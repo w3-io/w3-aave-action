@@ -198,6 +198,42 @@ const handlers = {
     setJsonOutput('result', r)
   },
 
+  // ── Governance reads ──────────────────────────────────────────
+  'get-proposal': async () => {
+    const r = await getClient().getProposal({
+      proposalId: core.getInput('proposal-id', { required: true }),
+    })
+    setJsonOutput('result', r)
+  },
+
+  'get-voting-power': async () => {
+    const r = await getClient().getVotingPower({
+      user: core.getInput('user', { required: true }),
+      blockNumber: core.getInput('block-number', { required: true }),
+    })
+    setJsonOutput('result', r)
+  },
+
+  // ── Rewards ──────────────────────────────────────────────────
+  'get-rewards-balance': async () => {
+    const r = await getClient().getRewardsBalance({
+      assets: core.getInput('assets', { required: true }),
+      user: core.getInput('user', { required: true }),
+      reward: core.getInput('reward', { required: true }),
+    })
+    setJsonOutput('result', r)
+  },
+
+  'claim-rewards': async () => {
+    const r = await getClient().claimRewards({
+      assets: core.getInput('assets', { required: true }),
+      amount: core.getInput('amount', { required: true }),
+      to: core.getInput('to', { required: true }),
+      reward: core.getInput('reward', { required: true }),
+    })
+    setJsonOutput('result', r)
+  },
+
   // ── Testnet ───────────────────────────────────────────────────
   'faucet-mint': async () => {
     const r = await getClient().faucetMint({

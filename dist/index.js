@@ -28113,6 +28113,22 @@ const FAUCET_ADDRESSES = {
   'ethereum-sepolia': '0xC959483DBa39aa9E78757139af0e9a2EDEb3f42D',
 }
 
+/**
+ * Aave Governance V3 contract address.
+ * Only on Ethereum mainnet — governance is L1-only.
+ */
+const GOVERNANCE_ADDRESSES = {
+  ethereum: '0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7',
+}
+
+/**
+ * Aave V3 IncentivesController (RewardsController) addresses.
+ * Source: @bgd-labs/aave-address-book
+ */
+const INCENTIVES_CONTROLLER_ADDRESSES = {
+  ethereum: '0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb',
+}
+
 /** Interest rate modes used by Aave V3. */
 const RATE_MODE = { NONE: 0, STABLE: 1, VARIABLE: 2 }
 
@@ -28150,6 +28166,8 @@ class AaveClient {
     this.oracle = ORACLE_ADDRESSES[network]
     this.wethGateway = WETH_GATEWAY_ADDRESSES[network]
     this.faucet = FAUCET_ADDRESSES[network]
+    this.governance = GOVERNANCE_ADDRESSES[network]
+    this.incentivesController = INCENTIVES_CONTROLLER_ADDRESSES[network]
   }
 
   // ── Internal helpers ──────────────────────────────────────────
@@ -28435,6 +28453,90 @@ class AaveClient {
     )
   }
 
+  // ── Governance reads ──────────────────────────────────────────
+
+  /** Get an Aave governance proposal by ID (Ethereum mainnet only). */
+  async getProposal({ proposalId } = {}) {
+    if (!this.governance) {
+      throw new AaveError(
+        'UNSUPPORTED_NETWORK',
+        `Governance not available on "${this.network}" — only Ethereum mainnet`,
+      )
+    }
+    if (proposalId === undefined) {
+      throw new AaveError('MISSING_INPUT', 'proposalId is required')
+    }
+
+    return this.#read(
+      this.governance,
+      'function getProposal(uint256 proposalId) view returns (uint256 id, address creator, address accessLevel, bool cancelled, uint256 votingDuration, uint256 creationTime, uint256 votingActivationTime, uint256 queuingTime, uint256 cancelTimestamp, uint256 state)',
+      [proposalId],
+    )
+  }
+
+  /** Get a user's voting power at a given block (Ethereum mainnet only). */
+  async getVotingPower({ user, blockNumber } = {}) {
+    if (!this.governance) {
+      throw new AaveError(
+        'UNSUPPORTED_NETWORK',
+        `Governance not available on "${this.network}" — only Ethereum mainnet`,
+      )
+    }
+    if (!user) throw new AaveError('MISSING_INPUT', 'user address is required')
+    if (blockNumber === undefined) {
+      throw new AaveError('MISSING_INPUT', 'blockNumber is required')
+    }
+
+    return this.#read(
+      this.governance,
+      'function getPowerCurrent(address user, uint256 blockNumber) view returns (uint256)',
+      [user, blockNumber],
+    )
+  }
+
+  // ── Rewards ──────────────────────────────────────────────────
+
+  /** Get unclaimed rewards for a user (Ethereum mainnet only). */
+  async getRewardsBalance({ assets, user, reward } = {}) {
+    if (!this.incentivesController) {
+      throw new AaveError(
+        'UNSUPPORTED_NETWORK',
+        `IncentivesController not available on "${this.network}" — only Ethereum mainnet`,
+      )
+    }
+    if (!assets) throw new AaveError('MISSING_INPUT', 'assets array is required')
+    if (!user) throw new AaveError('MISSING_INPUT', 'user address is required')
+    if (!reward) throw new AaveError('MISSING_INPUT', 'reward token address is required')
+
+    const assetList = Array.isArray(assets) ? assets : assets.split(',').map((a) => a.trim())
+    return this.#read(
+      this.incentivesController,
+      'function getUserRewards(address[] assets, address user, address reward) view returns (uint256)',
+      [assetList, user, reward],
+    )
+  }
+
+  /** Claim accumulated rewards (Ethereum mainnet only). */
+  async claimRewards({ assets, amount, to, reward } = {}) {
+    if (!this.incentivesController) {
+      throw new AaveError(
+        'UNSUPPORTED_NETWORK',
+        `IncentivesController not available on "${this.network}" — only Ethereum mainnet`,
+      )
+    }
+    if (!assets) throw new AaveError('MISSING_INPUT', 'assets array is required')
+    if (!amount) throw new AaveError('MISSING_INPUT', 'amount is required')
+    if (!to) throw new AaveError('MISSING_INPUT', 'to address is required')
+    if (!reward) throw new AaveError('MISSING_INPUT', 'reward token address is required')
+
+    const assetList = Array.isArray(assets) ? assets : assets.split(',').map((a) => a.trim())
+    return this.#call(
+      this.incentivesController,
+      'function claimRewards(address[] assets, uint256 amount, address to, address reward) returns (uint256)',
+      [assetList, amount, to, reward],
+    )
+  }
+
   // ── Testnet helpers ───────────────────────────────────────────
 
   /** Mint test tokens from the Aave faucet (testnet only). */
@@ -28651,6 +28753,42 @@ const handlers = {
   'get-emode-data': async () => {
     const r = await getClient().getEModeData({
       categoryId: core.getInput('category-id', { required: true }),
+    })
+    ;(0,dist.setJsonOutput)('result', r)
+  },
+
+  // ── Governance reads ──────────────────────────────────────────
+  'get-proposal': async () => {
+    const r = await getClient().getProposal({
+      proposalId: core.getInput('proposal-id', { required: true }),
+    })
+    ;(0,dist.setJsonOutput)('result', r)
+  },
+
+  'get-voting-power': async () => {
+    const r = await getClient().getVotingPower({
+      user: core.getInput('user', { required: true }),
+      blockNumber: core.getInput('block-number', { required: true }),
+    })
+    ;(0,dist.setJsonOutput)('result', r)
+  },
+
+  // ── Rewards ──────────────────────────────────────────────────
+  'get-rewards-balance': async () => {
+    const r = await getClient().getRewardsBalance({
+      assets: core.getInput('assets', { required: true }),
+      user: core.getInput('user', { required: true }),
+      reward: core.getInput('reward', { required: true }),
+    })
+    ;(0,dist.setJsonOutput)('result', r)
+  },
+
+  'claim-rewards': async () => {
+    const r = await getClient().claimRewards({
+      assets: core.getInput('assets', { required: true }),
+      amount: core.getInput('amount', { required: true }),
+      to: core.getInput('to', { required: true }),
+      reward: core.getInput('reward', { required: true }),
     })
     ;(0,dist.setJsonOutput)('result', r)
   },

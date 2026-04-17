@@ -198,6 +198,48 @@ commands:
     outputs:
       result: { type: object, description: E-mode category data }
 
+  # ── Governance ─────────────────────────────────────────────────
+  - name: get-proposal
+    description: Get an Aave governance proposal by ID (Ethereum mainnet only).
+    inputs:
+      proposal-id: { type: string, required: true, description: Governance proposal ID }
+    outputs:
+      result:
+        {
+          type: object,
+          description: '{id, creator, accessLevel, cancelled, votingDuration, creationTime, state, ...}',
+        }
+
+  - name: get-voting-power
+    description: Get a user's voting power at a given block (Ethereum mainnet only).
+    inputs:
+      user: { type: string, required: true, description: Wallet address }
+      block-number: { type: string, required: true, description: Block number to query }
+    outputs:
+      result: { type: string, description: Voting power as uint256 }
+
+  # ── Rewards ───────────────────────────────────────────────────
+  - name: get-rewards-balance
+    description: Get unclaimed rewards for a user (Ethereum mainnet only).
+    inputs:
+      assets:
+        { type: string, required: true, description: Comma-separated aToken/debt token addresses }
+      user: { type: string, required: true, description: Wallet address }
+      reward: { type: string, required: true, description: Reward token address }
+    outputs:
+      result: { type: string, description: Unclaimed reward amount as uint256 }
+
+  - name: claim-rewards
+    description: Claim accumulated rewards (Ethereum mainnet only).
+    inputs:
+      assets:
+        { type: string, required: true, description: Comma-separated aToken/debt token addresses }
+      amount: { type: string, required: true, description: Amount to claim in base units }
+      to: { type: string, required: true, description: Recipient address }
+      reward: { type: string, required: true, description: Reward token address }
+    outputs:
+      result: { type: object, description: Transaction receipt }
+
   # ── Testnet ───────────────────────────────────────────────────
   - name: faucet-mint
     description: Mint test tokens from Aave faucet (Sepolia only).
